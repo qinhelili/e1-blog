@@ -1,0 +1,10 @@
+.DS_Store
+/.idea/
+/.history/
+test
+__pycache__
+*.iml
+hug-Dockerfile.txt
+node_modules/
+/target
+/dist
