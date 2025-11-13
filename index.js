@@ -8,10 +8,10 @@ const crypto = require('crypto');
 const { Buffer } = require('buffer');
 const { exec, execSync } = require('child_process');
 const { WebSocket, createWebSocketStream } = require('ws');
-const UUID = process.env.UUID || '5efabea4-f6d4-91fd-b8f0-17e004c89c60'; // 运行哪吒v1,在不同的平台需要改UUID,否则会被覆盖
+const UUID = process.env.UUID || 'xxx'; // 运行哪吒v1,在不同的平台需要改UUID,否则会被覆盖
 const NEZHA_SERVER = process.env.NEZHA_SERVER || '';       // 哪吒v1填写形式：nz.abc.com:8008   哪吒v0填写形式：nz.abc.com
 const NEZHA_PORT = process.env.NEZHA_PORT || '';           // 哪吒v1没有此变量，v0的agent端口为{443,8443,2096,2087,2083,2053}其中之一时开启tls
-const NEZHA_KEY = process.env.NEZHA_KEY || '';             // v1的NZ_CLIENT_SECRET或v0的agent端口                
+const NEZHA_KEY = process.env.NEZHA_KEY || '';             // v1的NZ_CLIENT_SECRET或v0的agent端口
 const DOMAIN = process.env.DOMAIN || '1234.abc.com';       // 填写项目域名或已反代的域名，不带前缀，建议填已反代的域名
 const AUTO_ACCESS = process.env.AUTO_ACCESS || true;       // 是否开启自动访问保活,false为关闭,true为开启,需同时填写DOMAIN变量
 const WSPATH = process.env.WSPATH || UUID.slice(0, 8);     // 节点路径，默认获取uuid前8位
@@ -97,7 +97,7 @@ function resolveHost(host) {
         tryNextDNS();
       });
     }
-    
+
     tryNextDNS();
   });
 }
@@ -128,7 +128,7 @@ function handleVlessConnection(ws, msg) {
         duplex.on('error', () => {}).pipe(this).on('error', () => {}).pipe(duplex);
       }).on('error', () => {});
     });
-  
+
   return true;
 }
 
@@ -140,7 +140,7 @@ function handleTrojanConnection(ws, msg) {
     const possiblePasswords = [
       UUID,
     ];
-    
+
     let matchedPassword = null;
     for (const pwd of possiblePasswords) {
       const hash = crypto.createHash('sha224').update(pwd).digest('hex');
@@ -149,13 +149,13 @@ function handleTrojanConnection(ws, msg) {
         break;
       }
     }
-    
+
     if (!matchedPassword) return false;
     let offset = 56;
     if (msg[offset] === 0x0d && msg[offset + 1] === 0x0a) {
       offset += 2;
     }
-    
+
     const cmd = msg[offset];
     if (cmd !== 0x01) return false;
     offset += 1;
@@ -171,21 +171,21 @@ function handleTrojanConnection(ws, msg) {
       host = msg.slice(offset, offset + hostLen).toString();
       offset += hostLen;
     } else if (atyp === 0x04) {
-      host = msg.slice(offset, offset + 16).reduce((s, b, i, a) => 
+      host = msg.slice(offset, offset + 16).reduce((s, b, i, a) =>
         (i % 2 ? s.concat(a.slice(i - 1, i + 1)) : s), [])
         .map(b => b.readUInt16BE(0).toString(16)).join(':');
       offset += 16;
     } else {
       return false;
     }
-    
+
     port = msg.readUInt16BE(offset);
     offset += 2;
-    
+
     if (offset < msg.length && msg[offset] === 0x0d && msg[offset + 1] === 0x0a) {
       offset += 2;
     }
-    
+
     const duplex = createWebSocketStream(ws);
 
     resolveHost(host)
@@ -205,7 +205,7 @@ function handleTrojanConnection(ws, msg) {
           duplex.on('error', () => {}).pipe(this).on('error', () => {}).pipe(duplex);
         }).on('error', () => {});
       });
-    
+
     return true;
   } catch (error) {
     return false;
@@ -233,7 +233,7 @@ wss.on('connection', (ws, req) => {
 });
 
 const getDownloadUrl = () => {
-  const arch = os.arch(); 
+  const arch = os.arch();
   if (arch === 'arm' || arch === 'arm64' || arch === 'aarch64') {
     if (!NEZHA_PORT) {
       return 'https://arm64.ssss.nyc.mn/v1';
@@ -251,7 +251,7 @@ const getDownloadUrl = () => {
 
 const downloadFile = async () => {
   if (!NEZHA_SERVER && !NEZHA_KEY) return;
-  
+
   try {
     const url = getDownloadUrl();
     const response = await axios({
@@ -292,7 +292,7 @@ const runnz = async () => {
   await downloadFile();
   let command = '';
   let tlsPorts = ['443', '8443', '2096', '2087', '2083', '2053'];
-  
+
   if (NEZHA_SERVER && NEZHA_PORT && NEZHA_KEY) {
     const NEZHA_TLS = tlsPorts.includes(NEZHA_PORT) ? '--tls' : '';
     command = `setsid nohup ./npm -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} --disable-auto-update --report-delay 4 --skip-conn --skip-procs >/dev/null 2>&1 &`;
@@ -319,7 +319,7 @@ tls: ${NZ_TLS}
 use_gitee_to_upgrade: false
 use_ipv6_country_code: false
 uuid: ${UUID}`;
-      
+
       fs.writeFileSync('config.yaml', configYaml);
     }
     command = `setsid nohup ./npm -c config.yaml >/dev/null 2>&1 &`;
@@ -335,8 +335,8 @@ uuid: ${UUID}`;
     });
   } catch (error) {
     console.error(`error: ${error}`);
-  }   
-}; 
+  }
+};
 
 async function addAccessTask() {
   if (!AUTO_ACCESS) return;
@@ -361,7 +361,7 @@ async function addAccessTask() {
 
 const delFiles = () => {
   fs.unlink('npm', () => {});
-  fs.unlink('config.yaml', () => {}); 
+  fs.unlink('config.yaml', () => {});
 };
 
 httpServer.listen(PORT, () => {
